@@ -9,7 +9,6 @@ camera.position.set(0, 0, 12);
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
-// Enable shadows for realism
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 container.appendChild(renderer.domElement);
@@ -18,19 +17,17 @@ container.appendChild(renderer.domElement);
 const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
 scene.add(ambientLight);
 
-// Main light to create shiny reflections
 const dirLight = new THREE.DirectionalLight(0xffffff, 3);
 dirLight.position.set(5, 10, 7);
 dirLight.castShadow = true;
 scene.add(dirLight);
 
-// Blue rim light for the "cool" effect
-const rimLight = new THREE.PointLight(0x00aaff, 5, 20);
-rimLight.position.set(-5, 5, -5);
-scene.add(rimLight);
+// Add a fill light from the left to make the blue pop
+const fillLight = new THREE.DirectionalLight(0x00aaff, 2);
+fillLight.position.set(-5, 0, 5);
+scene.add(fillLight);
 
-// --- 3. CREATING THE PEPSI TEXTURE PURELY WITH CODE ---
-// Since we aren't using image files, we draw the logo on a hidden canvas and use it as a texture.
+// --- 3. CREATING THE PEPSI TEXTURE ---
 function createPepsiTexture() {
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
@@ -41,43 +38,48 @@ function createPepsiTexture() {
     ctx.fillStyle = '#002b80';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw the Pepsi Globe (Simplified)
-    ctx.beginPath();
-    ctx.arc(512, 400, 200, 0, Math.PI * 2);
-    ctx.fillStyle = '#ffffff'; // White circle
-    ctx.fill();
+    // Helper function to draw the logo so it wraps around the can
+    const drawLogo = (x, y) => {
+        // Draw the Pepsi Globe (Simplified)
+        ctx.beginPath();
+        ctx.arc(x, y, 120, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff'; // White circle
+        ctx.fill();
 
-    // Red top half
-    ctx.beginPath();
-    ctx.arc(512, 400, 200, Math.PI, 0);
-    ctx.fillStyle = '#ff0000';
-    ctx.fill();
+        // Red top half
+        ctx.beginPath();
+        ctx.arc(x, y, 120, Math.PI, 0);
+        ctx.fillStyle = '#ff0000';
+        ctx.fill();
 
-    // Blue bottom half (inside the white)
-    ctx.beginPath();
-    ctx.arc(512, 400, 200, 0, Math.PI);
-    ctx.fillStyle = '#002b80';
-    ctx.fill();
+        // Blue bottom half (inside the white)
+        ctx.beginPath();
+        ctx.arc(x, y, 120, 0, Math.PI);
+        ctx.fillStyle = '#002b80';
+        ctx.fill();
 
-    // Draw the swoosh line (simplified)
-    ctx.beginPath();
-    ctx.moveTo(312, 400);
-    ctx.quadraticCurveTo(512, 300, 712, 400);
-    ctx.lineWidth = 30;
-    ctx.strokeStyle = '#ffffff';
-    ctx.stroke();
+        // Draw the swoosh line
+        ctx.beginPath();
+        ctx.moveTo(x - 120, y);
+        ctx.quadraticCurveTo(x, y - 80, x + 120, y);
+        ctx.lineWidth = 15;
+        ctx.strokeStyle = '#ffffff';
+        ctx.stroke();
 
-    // Draw "pepsi" text
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold italic 150px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('pepsi', 512, 750);
+        // Draw "pepsi" text
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold italic 90px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('pepsi', x, y + 230);
+    };
+
+    // Draw the logo twice so it's visible from the front and back
+    drawLogo(256, 450);  // Left side of texture
+    drawLogo(768, 450);  // Right side of texture
 
     const texture = new THREE.CanvasTexture(canvas);
-    // Wrap the texture around the cylinder
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(1, 1);
+    // CRITICAL FIX: Tell Three.js the color space so it doesn't render black/invisible
+    texture.colorSpace = THREE.SRGBColorSpace; 
     
     return texture;
 }
@@ -89,7 +91,7 @@ const canGroup = new THREE.Group();
 const bodyGeo = new THREE.CylinderGeometry(2, 2, 6, 64);
 const bodyMat = new THREE.MeshStandardMaterial({
     map: createPepsiTexture(),
-    metalness: 0.6,
+    metalness: 0.4, // Lowered so the blue color is visible
     roughness: 0.3,
 });
 const body = new THREE.Mesh(bodyGeo, bodyMat);
@@ -100,9 +102,9 @@ canGroup.add(body);
 // Silver Rims (Top and Bottom)
 const rimGeo = new THREE.TorusGeometry(2, 0.1, 16, 100);
 const rimMat = new THREE.MeshStandardMaterial({
-    color: 0xdddddd,
-    metalness: 1,
-    roughness: 0.1,
+    color: 0xcccccc, // Silver
+    metalness: 0.8,
+    roughness: 0.2,
 });
 
 const topRim = new THREE.Mesh(rimGeo, rimMat);
@@ -118,9 +120,9 @@ canGroup.add(bottomRim);
 // Can Top Lid
 const lidGeo = new THREE.CircleGeometry(2, 64);
 const lidMat = new THREE.MeshStandardMaterial({
-    color: 0xcccccc,
-    metalness: 1,
-    roughness: 0.2,
+    color: 0xaaaaaa,
+    metalness: 0.9,
+    roughness: 0.1,
 });
 const lid = new THREE.Mesh(lidGeo, lidMat);
 lid.rotation.x = -Math.PI / 2;
@@ -129,17 +131,17 @@ canGroup.add(lid);
 
 // Add the Can to the Scene
 scene.add(canGroup);
-canGroup.rotation.z = -0.2; // Slight tilt
+canGroup.rotation.z = -0.2; 
 
-// --- 5. ADDING A "BUBBLE" CHARACTER (Bonus) ---
+// --- 5. ADDING A "BUBBLE" CHARACTER ---
 const bubbleGroup = new THREE.Group();
 const bubbleGeo = new THREE.SphereGeometry(0.8, 32, 32);
 const bubbleMat = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     transparent: true,
-    opacity: 0.3,
+    opacity: 0.4, // Slightly more visible
     roughness: 0.1,
-    metalness: 0.9
+    metalness: 0.3
 });
 const bubble = new THREE.Mesh(bubbleGeo, bubbleMat);
 bubbleGroup.add(bubble);
@@ -148,9 +150,9 @@ bubbleGroup.add(bubble);
 const eyeGeo = new THREE.SphereGeometry(0.15, 16, 16);
 const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
 const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-leftEye.position.set(-0.2, 0.2, 0.7);
+leftEye.position.set(-0.25, 0.2, 0.7);
 const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-rightEye.position.set(0.2, 0.2, 0.7);
+rightEye.position.set(0.25, 0.2, 0.7);
 bubbleGroup.add(leftEye, rightEye);
 
 bubbleGroup.position.set(4, 2, 0);
@@ -178,7 +180,6 @@ function animate() {
 
     const elapsedTime = clock.getElapsedTime();
 
-    // Smooth mouse tracking (Lerp)
     targetX = mouseX * 0.5;
     targetY = mouseY * 0.5;
 
