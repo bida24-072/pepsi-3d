@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pure Code 3D Pepsi</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Three.js Import Map (Allows us to use ES modules in the browser) -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <!-- 3D Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <!-- UI Overlay -->
+    <div class="ui-layer">
+        <div class="header">
+            <div class="logo-text">PEPSI</div>
+            <div class="nav-links">
+                <span>FLAVORS</span>
+                <span>SWIRL</span>
+                <span>PLAY</span>
+            </div>
+        </div>
+
+        <div class="hero-text">
+            <h1>Pick your<br><span>fizz.</span></h1>
+            <p>Some premixes, different altitudes. Tap to discover and explore new flavors you'll love.</p>
+            <button class="btn">Pepsi</button>
+        </div>
+    </div>
+
+    <!-- Bottom Marquee Banner -->
+    <div class="bottom-banner">
+        ICE COLD ⚡ MAXIMUM TASTE ⚡ PEPSI ⚡ ICE COLD ⚡ MAXIMUM TASTE ⚡ PEPSI
+    </div>
+
+    <!-- The Logic -->
+    <script type="module" src="main.js"></script>
+</body>
+</html>
